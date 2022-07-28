@@ -1,0 +1,19 @@
+#!/bin/bash
+#SBATCH --ntasks-per-node=1
+#SBATCH --nodes=2
+#SBATCH --exclusive
+#SBATCH --partition hb120v3
+export SLURM_EXPORT_ENV=ALL
+
+HPCX=$(ls -d /opt/hpcx*|tail -1)
+source $HPCX/hpcx-init.sh
+hpcx_load
+
+echo ++ PMIs available to SLURM:
+srun --mpi=list
+echo ++ Running MPI Hello using PMIx:
+srun --mpi=pmix ./mpihello
+echo ++ Downloading Ubuntu container...
+srun --container-image=ubuntu --container-name=ubuntu1 bash -c "apt-get update >/dev/null; apt-get install -y infiniband-diags>/dev/null"
+echo ++ Running MPI Hello in the container:
+srun --container-name=ubuntu1 --container-mounts=/anfhome,/opt --mpi=pmix $PWD/mpihello
